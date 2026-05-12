@@ -1,0 +1,212 @@
+{
+  "name": "Chatbot CS Nola",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ac128b45-ba82-4da8-b952-aff39dc6fc64",
+      "name": "When chat message received",
+      "webhookId": "3afbbe11-b7f3-4465-9781-bf030fb97566"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c2281d2-e40e-4e8e-95df-cceb86ba98f7",
+              "name": "Pergunta",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c0cf59ff-aee4-443a-ab7c-0c7191a7cd56",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1VqHyRs53kw0NnwlbTwYNShvfln62R3Tb5CCLPp5GsK8",
+          "mode": "list",
+          "cachedResultName": "BaseCS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VqHyRs53kw0NnwlbTwYNShvfln62R3Tb5CCLPp5GsK8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VqHyRs53kw0NnwlbTwYNShvfln62R3Tb5CCLPp5GsK8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f39de84c-afe5-4560-9717-d955494cb961",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "S9SNsFURvaJjCwRB",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const pergunta = $('Edit Fields').first().json.Pergunta;\nconst linhas = $input.all();\n\nlet contexto = \"\";\nfor (const linha of linhas) {\n  contexto += `Categoria: ${linha.json.Categoria} | Pergunta: ${linha.json.Pergunta} | Resposta: ${linha.json.Resposta} || `;\n}\n\nconst body = {\n  model: \"llama-3.3-70b-versatile\",\n  temperature: 0.3,\n  max_tokens: 500,\n  messages: [\n    {\n      role: \"system\",\n      content: \"Você é assistente interno de Customer Success da Nola. Ao responder, sempre inicie com uma saudação cordial e empática. Responda APENAS com base no contexto abaixo. Se não encontrar nenhuma informação relacionada, responda EXATAMENTE assim: 'Olá! Fico feliz em ajudar. Ainda não tenho essa informação na nossa base de conhecimento, mas não se preocupe! Para resolver isso rapidamente, acione o time responsável abra um chamado interno. Vou registrar essa dúvida na base em breve.' Contexto: \" + contexto\n    },\n    {\n      role: \"user\",\n      content: pergunta\n    }\n  ]\n};\n\nreturn [{ json: { body } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "8588361b-8590-49de-be39-56022b2b4576",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "SUA_CHAVE_GROQ_AQUI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "137a1c10-7139-4c5d-9c9f-d8017d2cb260",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c3ce46a4-3694-480b-9ea0-e592a3436340",
+              "name": "output",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "24570d5b-1bcc-4b6f-9ab9-796afd02a385",
+      "name": "Edit Fields1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d67b74dd-a158-495b-8f01-ba15831230d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30d6e38a15d7f452cfcbdbb4a8de1a1e5037da64c8389b15385db8b5c5b887ad"
+  },
+  "id": "XPmKS6tittUlCsGR",
+  "tags": []
+}
